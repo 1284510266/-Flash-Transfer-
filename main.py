@@ -83,6 +83,8 @@ async def get_info():
         "local_ip": get_local_ip(),
         "port": 8000
     }
+
+@app.get("/clipboard")
 async def get_clipboard():
     return {"content": clipboard_content}
 
