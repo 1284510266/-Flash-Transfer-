@@ -8,6 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- QRCode.js -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <style>
         :root {
             --primary: #6366f1;
@@ -64,6 +66,27 @@
         header p {
             color: var(--text-muted);
             font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        #qrcode {
+            background: white;
+            padding: 8px;
+            border-radius: 8px;
+            display: none;
+            margin: 1rem auto;
+            width: fit-content;
+        }
+
+        .qr-toggle {
+            cursor: pointer;
+            color: var(--primary);
+            text-decoration: underline;
+            font-size: 0.9rem;
         }
 
         .grid {
@@ -309,6 +332,8 @@
         <header>
             <h1>⚡ 闪传</h1>
             <p>局域网跨设备文件 & 剪贴板极速同步</p>
+            <div id="qrcode"></div>
+            <div class="qr-toggle" id="qrToggle" style="display: none;">显示二维码</div>
         </header>
 
         <div class="grid">
@@ -383,16 +408,37 @@
         const copyBtn = document.getElementById('copyBtn');
         const toast = document.getElementById('toast');
         const headerSub = document.querySelector('header p');
+        const qrContainer = document.getElementById('qrcode');
+        const qrToggle = document.getElementById('qrToggle');
 
         async function updateNetworkInfo() {
             try {
                 const res = await fetch('/info');
                 const data = await res.json();
-                headerSub.innerHTML = `局域网访问地址: <span style="color: #818cf8; font-weight: 600;">http://${data.local_ip}:${data.port}</span>`;
+                const url = `http://${data.local_ip}:${data.port}`;
+                headerSub.innerHTML = `访问地址: <span style="color: #818cf8; font-weight: 600;">${url}</span>`;
+                
+                // Generate QR Code
+                qrContainer.innerHTML = "";
+                new QRCode(qrContainer, {
+                    text: url,
+                    width: 128,
+                    height: 128,
+                    colorDark: "#0f172a",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                qrToggle.style.display = 'block';
             } catch (e) {
                 console.error('无法获取网络信息');
             }
         }
+
+        qrToggle.onclick = () => {
+            const isVisible = qrContainer.style.display === 'block';
+            qrContainer.style.display = isVisible ? 'none' : 'block';
+            qrToggle.innerText = isVisible ? '显示二维码' : '收起二维码';
+        };
             toast.innerText = msg;
             toast.style.display = 'block';
             setTimeout(() => {
