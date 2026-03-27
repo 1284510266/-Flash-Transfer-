@@ -6,6 +6,9 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
 import socket
+import webbrowser
+import threading
+import time
 from typing import List
 
 app = FastAPI()
@@ -90,5 +93,13 @@ async def update_clipboard(data: ClipboardUpdate):
     return {"message": "Updated"}
 
 if __name__ == "__main__":
+    def open_browser():
+        # Wait a bit for server to start
+        time.sleep(1.5)
+        webbrowser.open("http://localhost:8000")
+
+    # Start browser thread
+    threading.Thread(target=open_browser, daemon=True).start()
+    
     # In a local network, 0.0.0.0 is needed for other devices to access
     uvicorn.run(app, host="0.0.0.0", port=8000)

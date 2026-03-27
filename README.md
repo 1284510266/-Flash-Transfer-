@@ -11,17 +11,18 @@
 
 ## 🚀 快速开始
 
-### 1. 安装依赖
-确保已安装 Python 3.7+，然后运行：
-```bash
-pip install fastapi uvicorn python-multipart
-```
+### 方式一：一键启动 (推荐 Windows 用户)
+直接双击运行项目根目录下的 **`启动.bat`**。它会自动安装依赖并启动服务，随后自动为你打开浏览器。
 
-### 2. 启动服务
-在项目根目录运行：
-```bash
-python main.py
-```
+### 方式二：命令行手动启动
+1. **安装依赖**：
+   ```bash
+   pip install fastapi uvicorn python-multipart
+   ```
+2. **启动服务**：
+   ```bash
+   python main.py
+   ```
 
 ### 3. 访问应用
 - **本机访问**：[http://localhost:8000](http://localhost:8000)
