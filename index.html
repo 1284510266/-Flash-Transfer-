@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>闪传 - 跨设备文件互传</title>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --glass-blur: blur(12px);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: 1.2fr 0.8fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+            color: var(--primary);
+        }
+
+        /* Upload Section */
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .upload-area input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .upload-area .upload-icon {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+        }
+
+        /* File List */
+        .file-list {
+            margin-top: 1.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            background: rgba(255, 255, 255, 0.03);
+            margin-bottom: 0.75rem;
+            transition: background 0.2s;
+        }
+
+        .file-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            overflow: hidden;
+        }
+
+        .file-name {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
+
+        .file-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+        }
+
+        .btn-icon.download:hover {
+            color: #10b981;
+        }
+
+        .btn-icon.delete:hover {
+            color: #ef4444;
+        }
+
+        /* Clipboard */
+        textarea {
+            width: 100%;
+            height: 150px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1rem;
+            color: var(--text-main);
+            font-size: 1rem;
+            resize: none;
+            margin-bottom: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* Notifications */
+        #toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 1rem;
+            background: #1e293b;
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            display: none;
+            z-index: 100;
+            border: 1px solid var(--border);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ 闪传</h1>
+            <p>局域网跨设备文件 & 剪贴板极速同步</p>
+        </header>
+
+        <div class="grid">
+            <!-- Left: Files -->
+            <div class="card">
+                <div class="card-header">
+                    <i data-lucide="folder" class="icon"></i>
+                    <h2>文件互传</h2>
+                </div>
+
+                <div class="upload-area" id="dropZone">
+                    <i data-lucide="upload-cloud" class="upload-icon"></i>
+                    <p>点击或拖拽文件到这里上传</p>
+                    <p class="file-meta" style="margin-top: 0.5rem;">支持任何格式的文件</p>
+                    <input type="file" id="fileInput">
+                </div>
+
+                <div class="progress-container" id="progressContainer">
+                    <div class="file-meta" id="uploadStatus">上传中... 0%</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+
+                <div class="file-list" id="fileList">
+                    <!-- Files will be injected here -->
+                    <div class="file-meta" style="text-align: center; margin-top: 2rem;">暂无文件</div>
+                </div>
+            </div>
+
+            <!-- Right: Clipboard -->
+            <div class="card">
+                <div class="card-header">
+                    <i data-lucide="clipboard" class="icon"></i>
+                    <h2>剪贴板同步</h2>
+                </div>
+
+                <textarea id="clipboard" placeholder="在此输入文字，点击同步到其他设备..."></textarea>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="syncBtn">
+                        <i data-lucide="send" style="width: 18px;"></i>
+                        同步
+                    </button>
+                    <button class="btn btn-secondary" id="loadBtn">
+                        <i data-lucide="refresh-cw" style="width: 18px;"></i>
+                        拉取
+                    </button>
+                    <button class="btn btn-secondary" id="copyBtn">
+                        <i data-lucide="copy" style="width: 18px;"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+        // Init Lucide
+        lucide.createIcons();
+
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const dropZone = document.getElementById('dropZone');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const clipboardArea = document.getElementById('clipboard');
+        const syncBtn = document.getElementById('syncBtn');
+        const loadBtn = document.getElementById('loadBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const toast = document.getElementById('toast');
+        const headerSub = document.querySelector('header p');
+
+        async function updateNetworkInfo() {
+            try {
+                const res = await fetch('/info');
+                const data = await res.json();
+                headerSub.innerHTML = `局域网访问地址: <span style="color: #818cf8; font-weight: 600;">http://${data.local_ip}:${data.port}</span>`;
+            } catch (e) {
+                console.error('无法获取网络信息');
+            }
+        }
+            toast.innerText = msg;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, duration);
+        }
+
+        function formatSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        // Fetch file list
+        async function fetchFiles() {
+            try {
+                const res = await fetch('/files');
+                const files = await res.json();
+                renderFiles(files);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderFiles(files) {
+            if (files.length === 0) {
+                fileList.innerHTML = '<div class="file-meta" style="text-align: center; margin-top: 2rem;">暂无文件</div>';
+                return;
+            }
+
+            fileList.innerHTML = files.map(file => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <i data-lucide="file" style="width: 24px; color: var(--text-muted);"></i>
+                        <div>
+                            <div class="file-name" title="${file.name}">${file.name}</div>
+                            <div class="file-meta">${formatSize(file.size)} • ${new Date(file.mtime * 1000).toLocaleString()}</div>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn-icon download" onclick="downloadFile('${file.name}')">
+                            <i data-lucide="download"></i>
+                        </button>
+                        <button class="btn-icon delete" onclick="deleteFile('${file.name}')">
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        window.downloadFile = (name) => {
+            window.location.href = `/download/${encodeURIComponent(name)}`;
+        };
+
+        window.deleteFile = async (name) => {
+            if (!confirm(`确定要删除 ${name} 吗？`)) return;
+            try {
+                await fetch(`/files/${encodeURIComponent(name)}`, { method: 'DELETE' });
+                showToast('文件已删除');
+                fetchFiles();
+            } catch (e) {
+                showToast('删除失败');
+            }
+        };
+
+        // Upload logic
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) handleUpload(file);
+        };
+
+        async function handleUpload(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            progressContainer.style.display = 'block';
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/upload', true);
+
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressFill.style.width = percent + '%';
+                    uploadStatus.innerText = `上传中... ${percent}%`;
+                }
+            };
+
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    showToast('文件上传成功');
+                    fetchFiles();
+                } else {
+                    showToast('上传失败');
+                }
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                    progressFill.style.width = '0%';
+                }, 1000);
+            };
+
+            xhr.send(formData);
+        }
+
+        // Clipboard logic
+        syncBtn.onclick = async () => {
+            const content = clipboardArea.value;
+            try {
+                await fetch('/clipboard', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content })
+                });
+                showToast('剪贴板已同步到云端');
+            } catch (e) {
+                showToast('同步失败');
+            }
+        };
+
+        loadBtn.onclick = async () => {
+            try {
+                const res = await fetch('/clipboard');
+                const data = await res.json();
+                clipboardArea.value = data.content;
+                showToast('已拉取最新剪贴板内容');
+            } catch (e) {
+                showToast('拉取失败');
+            }
+        };
+
+        copyBtn.onclick = () => {
+            clipboardArea.select();
+            document.execCommand('copy');
+            showToast('已复制到本地剪贴板');
+        };
+
+        // Drag and drop
+        dropZone.ondragover = (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--primary)';
+        };
+
+        dropZone.ondragleave = () => {
+            dropZone.style.borderColor = 'var(--border)';
+        };
+
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--border)';
+            if (e.dataTransfer.files.length > 0) {
+                handleUpload(e.dataTransfer.files[0]);
+            }
+        };
+
+        // Initial load
+        fetchFiles();
+        loadBtn.click(); // Initial load of clipboard
+        updateNetworkInfo();
+    </script>
+</body>
+</html>
